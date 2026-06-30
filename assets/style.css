@@ -1,0 +1,298 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:Arial, Helvetica, sans-serif;
+    background:#F5F7FA;
+    color:#333333;
+    line-height:1.6;
+}
+
+a{
+    text-decoration:none;
+    color:inherit;
+}
+
+ul{
+    list-style:none;
+}
+
+.header{
+    background:#0F1C3F;
+    color:white;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:20px 60px;
+    position:sticky;
+    top:0;
+    z-index:1000;
+}
+
+.logo h2{
+    font-size:28px;
+    font-weight:bold;
+}
+
+.nav-links{
+    display:flex;
+    gap:30px;
+}
+
+.nav-links a{
+    color:white;
+    font-size:16px;
+    transition:0.3s;
+}
+
+.nav-links a:hover{
+    color:#4DA8DA;
+}
+
+.hero{
+    background:white;
+    min-height:80vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+    padding:100px 20px;
+}
+
+.hero-content{
+    max-width:700px;
+    margin:0 auto;
+}
+
+.hero h1{
+    font-size:48px;
+    color:#0F1C3F;
+    margin-bottom:20px;
+}
+
+.hero p{
+    font-size:20px;
+    color:#555555;
+    margin-bottom:40px;
+}
+
+.hero-buttons{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:20px;
+}
+
+.btn-primary{
+    background:#1E5EFF;
+    color:white;
+    padding:15px 30px;
+    border-radius:6px;
+    font-weight:bold;
+    transition:0.3s;
+    display:inline-block;
+}
+
+.btn-primary:hover{
+    background:#163DBA;
+}
+
+.btn-secondary{
+    border:2px solid #1E5EFF;
+    color:#1E5EFF;
+    padding:15px 30px;
+    border-radius:6px;
+    font-weight:bold;
+    transition:0.3s;
+    display:inline-block;
+}
+
+.btn-secondary:hover{
+    background:#1E5EFF;
+    color:white;
+}
+
+.features{
+    padding:80px 60px;
+    text-align:center;
+}
+
+.features h2{
+    font-size:36px;
+    color:#0F1C3F;
+    margin-bottom:50px;
+}
+
+.feature-container{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+    gap:30px;
+}
+
+.card{
+    background:white;
+    padding:30px;
+    border-radius:10px;
+    box-shadow:0 5px 15px rgba(0,0,0,0.1);
+    transition:0.3s;
+}
+
+.card:hover{
+    transform:translateY(-5px);
+    box-shadow:0 8px 20px rgba(0,0,0,0.15);
+}
+
+.card h3{
+    color:#0F1C3F;
+    margin-bottom:15px;
+}
+
+.card p{
+    color:#666666;
+}
+
+.form-container{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:80px 20px;
+}
+
+.form-card{
+    background:white;
+    width:500px;
+    max-width:100%;
+    padding:40px;
+    border-radius:10px;
+    box-shadow:0 5px 15px rgba(0,0,0,0.1);
+}
+
+.form-card h1{
+    text-align:center;
+    color:#0F1C3F;
+    margin-bottom:15px;
+}
+
+.form-card p{
+    text-align:center;
+    color:#666666;
+    margin-bottom:25px;
+}
+
+.form-card form{
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+}
+
+.form-card input,
+.form-card select{
+    width:100%;
+    padding:15px;
+    border:1px solid #CCCCCC;
+    border-radius:6px;
+    font-size:16px;
+}
+
+.form-card input:focus,
+.form-card select:focus{
+    outline:none;
+    border-color:#1E5EFF;
+}
+
+.form-card select{
+    background:white;
+}
+
+.form-card button{
+    border:none;
+    cursor:pointer;
+}
+
+.toggle-password{
+    background:none;
+    border:none;
+    color:#1E5EFF;
+    cursor:pointer;
+    text-align:right;
+    font-size:14px;
+    align-self:flex-end;
+}
+
+.form-link{
+    margin-top:20px;
+    text-align:center;
+}
+
+.form-link a{
+    color:#1E5EFF;
+    font-weight:bold;
+}
+
+.result{
+    margin-top:30px;
+    padding:20px;
+    border-radius:6px;
+    text-align:center;
+}
+
+.genuine{
+    background:#E8F5E9;
+    color:#2E7D32;
+}
+
+.counterfeit{
+    background:#FFEBEE;
+    color:#C62828;
+}
+
+.error{
+    background:#FFF3E0;
+    color:#EF6C00;
+}
+
+footer{
+    background:#0F1C3F;
+    color:white;
+    text-align:center;
+    padding:25px;
+    margin-top:80px;
+}
+
+@media(max-width:768px){
+
+    .header{
+        flex-direction:column;
+        padding:20px;
+    }
+
+    .nav-links{
+        flex-direction:column;
+        align-items:center;
+        margin-top:20px;
+    }
+
+    .hero h1{
+        font-size:34px;
+    }
+
+    .hero p{
+        font-size:18px;
+    }
+
+    .hero-buttons{
+        flex-direction:column;
+    }
+
+    .features{
+        padding:50px 20px;
+    }
+
+    .form-card{
+        padding:30px;
+    }
+
+}
