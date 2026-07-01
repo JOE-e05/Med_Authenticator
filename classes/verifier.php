@@ -26,17 +26,16 @@ class SystemVerifier {
             $stmt->bindParam(':batchNumber', $batchNumber);
             $stmt->execute();
 
-            if ($stmt->rowCount() > 0) {
-                $medicineData = $stmt->fetch(PDO::FETCH_ASSOC);
+           if ($stmt->rowCount() > 0) {
                 return [
                     'status' => 'Genuine',
                     'message' => 'This medicine is authentic.',
-                    'details' => $medicineData
+                    'details' => $stmt->fetch(PDO::FETCH_ASSOC)
                 ];
             } else {
                 return [
                     'status' => 'Counterfeit',
-                    'message' => 'Warning: This batch number cannot be found or is potentially counterfeit.'
+                    'message' => 'Warning: This batch number cannot be found.'
                 ];
             }
 
