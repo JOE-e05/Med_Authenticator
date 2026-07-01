@@ -10,7 +10,7 @@ $conn = $database->getConnection();
 
 if(isset($_POST['verify'])){
     $batchNumber = trim($_POST['batch_number']);
-    $userId = $_SESSION['customerID']; // Pulled from your updated auth
+    $userId = $_SESSION['customerID'];
 
     $verifier = new SystemVerifier();
     $resultData = $verifier->checkBatchNumber($batchNumber);
@@ -19,7 +19,7 @@ if(isset($_POST['verify'])){
     if($status === 'Genuine'){
         $medicine = $resultData['details'];
         $message = "Medicine Verified Successfully";
-        // Mapped to your exact columns: medName, manufacture, expiryDate
+       
         $medicineDetails = "
             <strong>Medicine Name:</strong> {$medicine['medName']}<br><br>
             <strong>Manufacturer:</strong> {$medicine['manufacture']}<br><br>
@@ -35,7 +35,7 @@ if(isset($_POST['verify'])){
         ";
     }
 
-    // Mapped to your exact 'verification_log' table
+
     $logQuery = "INSERT INTO verification_log (userID, batchNumber, result) VALUES (:uid, :batch, :result)";
     $logStmt = $conn->prepare($logQuery);
     $logStmt->bindParam(':uid', $userId);
@@ -49,7 +49,7 @@ if(isset($_POST['verify'])){
 <html>
 <head>
     <title>Verify Medicine</title>
-    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/style.css">
 </head>
 <body>
 <div class="container">

@@ -10,9 +10,9 @@ $userId = $_SESSION['customerID'];
 if(isset($_POST['submit_report'])){
     $batchNumber = trim($_POST['batch_number']);
     $description = trim($_POST['description']);
-    $defaultStatus = "Pending"; // Default status for a new report
+    $defaultStatus = "Pending"; 
 
-    // Much simpler! Just inserting directly into your 'report' table
+    
     $insertStmt = $conn->prepare("INSERT INTO report (userID, batchNumber, description, status) VALUES (:uid, :batch, :desc, :status)");
     $insertStmt->bindParam(':uid', $userId);
     $insertStmt->bindParam(':batch', $batchNumber);
@@ -26,7 +26,6 @@ if(isset($_POST['submit_report'])){
     }
 }
 
-// Mapped to your 'report' table
 $reportsStmt = $conn->prepare("SELECT * FROM report WHERE userID = :uid ORDER BY reported_at DESC");
 $reportsStmt->bindParam(':uid', $userId);
 $reportsStmt->execute();

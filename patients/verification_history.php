@@ -6,7 +6,6 @@ $database = new Database();
 $conn = $database->getConnection();
 $userId = $_SESSION['customerID'];
 
-// Joining your verification_log with your medicine table exactly
 $query = "SELECT 
             v.batchNumber, 
             v.result, 

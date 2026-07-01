@@ -6,13 +6,13 @@ $database = new Database();
 $conn = $database->getConnection();
 $userId = $_SESSION['customerID'];
 
-// Count exactly from verification_log
+
 $stmt1 = $conn->prepare("SELECT COUNT(*) as total FROM verification_log WHERE userID = :uid");
 $stmt1->bindParam(':uid', $userId);
 $stmt1->execute();
 $totalVerifications = $stmt1->fetch(PDO::FETCH_ASSOC)['total'];
 
-// Count exactly from report
+
 $stmt2 = $conn->prepare("SELECT COUNT(*) as total FROM report WHERE userID = :uid");
 $stmt2->bindParam(':uid', $userId);
 $stmt2->execute();
