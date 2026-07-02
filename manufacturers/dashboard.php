@@ -1,5 +1,6 @@
 <?php
 require_once "../config/manufacturer_auth.php";
+require_once "../config/csrf.php";
 require_once "../classes/manufacturerManager.php";
 
 $manager = new ManufacturerManager();
@@ -11,6 +12,8 @@ $userId = (int) $_SESSION['manufacturer_user_id'];
 $search = trim($_GET['search'] ?? '');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_codes'])) {
+    csrf_require_valid_post();
+
     $medicineName = trim($_POST['medicine_name'] ?? '');
     $manufactureDate = trim($_POST['manufacture_date'] ?? '');
     $expiryDate = trim($_POST['expiry_date'] ?? '');
@@ -22,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_codes'])) {
         $error = 'Expiry date must be after manufacture date.';
     } else {
         try {
-            $generatedBatch = $manager->createBatchWithPackCodes($userId, $medicineName, $manufactureDate, $expiryDate, $packCount);
+            $generatedBatch = $manager->createBatchWithPackCodes($userId, $medicineName, $manufactureDate, $expiryDate, $packCount, 'Manufacturer');
             $message = 'Batch and pack codes generated successfully.';
         } catch (Exception $e) {
             $error = $e->getMessage();
@@ -78,6 +81,7 @@ $history = $manager->getBatchHistory($userId, $search);
             <?php endif; ?>
 
             <form method="POST" style="margin-top: 15px;">
+                <?php echo csrf_input_field(); ?>
                 <label>Medicine Name</label>
                 <input type="text" name="medicine_name" required>
 

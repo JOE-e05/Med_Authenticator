@@ -1,26 +1,32 @@
 <?php
 require_once "../config/admin_auth.php";
+require_once "../config/csrf.php";
 require_once "../classes/adminManager.php";
 
 $adminManager = new AdminManager();
 $message = "";
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_action'])) {
+    csrf_require_valid_post();
 
-if (isset($_GET['status']) && isset($_GET['id'])) {
-    $newStatus = (int)$_GET['status']; 
-    if ($adminManager->updateUserStatus($_GET['id'], $newStatus)) {
-        header("Location: users.php");
-        exit();
-    }
-}
+    $action = trim($_POST['user_action']);
+    $userId = (int) ($_POST['user_id'] ?? 0);
 
-if (isset($_GET['delete'])) {
-    try {
-        if ($adminManager->deleteUser($_GET['delete'])) {
-            $message = "<div style='color: #856404; background-color: #fff3cd; padding: 10px; border: 1px solid #ffeeba; border-radius: 5px; margin-bottom: 15px;'> User account permanently deleted.</div>";
+    if ($userId > 0) {
+        try {
+            if ($action === 'set_status') {
+                $newStatus = (int) ($_POST['new_status'] ?? 0);
+                if ($adminManager->updateUserStatus($userId, $newStatus, 'Admin')) {
+                    $message = "<div style='color: #155724; background-color: #d4edda; padding: 10px; border: 1px solid #c3e6cb; border-radius: 5px; margin-bottom: 15px;'> User status updated.</div>";
+                }
+            } elseif ($action === 'delete') {
+                if ($adminManager->deleteUser($userId, 'Admin')) {
+                    $message = "<div style='color: #856404; background-color: #fff3cd; padding: 10px; border: 1px solid #ffeeba; border-radius: 5px; margin-bottom: 15px;'> User account permanently deleted.</div>";
+                }
+            }
+        } catch (Exception $e) {
+            $message = "<div style='color: red; font-weight: bold; margin-bottom: 15px;'> Error: " . $e->getMessage() . "</div>";
         }
-    } catch (Exception $e) {
-        $message = "<div style='color: red; font-weight: bold; margin-bottom: 15px;'> Error: " . $e->getMessage() . "</div>";
     }
 }
 
@@ -77,14 +83,31 @@ $users = $adminManager->getAllUsers();
                     </td>
                     <td>
                         <a href="edit_medicine.php?id=<?php echo $user['customerID']; ?>" style="color: #0056b3; font-weight: bold; text-decoration: none; margin-right: 10px;">Edit</a>
-                        
+
                         <?php if($user['status'] == 1): ?>
-                            <a href="users.php?status=0&id=<?php echo $user['customerID']; ?>" style="color: #fd7e14; text-decoration: none; margin-right: 10px;">Deactivate</a>
+                            <form method="POST" style="display:inline-block; margin-right: 10px;">
+                                <?php echo csrf_input_field(); ?>
+                                <input type="hidden" name="user_action" value="set_status">
+                                <input type="hidden" name="user_id" value="<?php echo (int) $user['customerID']; ?>">
+                                <input type="hidden" name="new_status" value="0">
+                                <button type="submit" style="background:none; border:none; color:#fd7e14; padding:0; margin:0; width:auto; cursor:pointer;">Deactivate</button>
+                            </form>
                         <?php else: ?>
-                            <a href="users.php?status=1&id=<?php echo $user['customerID']; ?>" style="color: #28a745; text-decoration: none; margin-right: 10px;">Activate</a>
+                            <form method="POST" style="display:inline-block; margin-right: 10px;">
+                                <?php echo csrf_input_field(); ?>
+                                <input type="hidden" name="user_action" value="set_status">
+                                <input type="hidden" name="user_id" value="<?php echo (int) $user['customerID']; ?>">
+                                <input type="hidden" name="new_status" value="1">
+                                <button type="submit" style="background:none; border:none; color:#28a745; padding:0; margin:0; width:auto; cursor:pointer;">Activate</button>
+                            </form>
                         <?php endif; ?>
 
-                        <a href="users.php?delete=<?php echo $user['customerID']; ?>" onclick="return confirm('Delete this user account permanently?');" style="color: #dc3545; font-weight: bold; text-decoration: none;">Delete</a>
+                        <form method="POST" style="display:inline-block;">
+                            <?php echo csrf_input_field(); ?>
+                            <input type="hidden" name="user_action" value="delete">
+                            <input type="hidden" name="user_id" value="<?php echo (int) $user['customerID']; ?>">
+                            <button type="submit" onclick="return confirm('Delete this user account permanently?');" style="background:none; border:none; color:#dc3545; font-weight:bold; padding:0; margin:0; width:auto; cursor:pointer;">Delete</button>
+                        </form>
                     </td>
                 </tr>
                 <?php endforeach; ?>

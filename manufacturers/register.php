@@ -1,4 +1,6 @@
 <?php
+session_start();
+require_once "../config/csrf.php";
 require_once "../classes/manufacturerManager.php";
 
 $manager = new ManufacturerManager();
@@ -6,6 +8,8 @@ $message = '';
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_require_valid_post();
+
     $fullName = trim($_POST['full_name'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $password = (string) ($_POST['password'] ?? '');
@@ -59,6 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
 
         <form method="POST">
+            <?php echo csrf_input_field(); ?>
             <label>Contact Person Name</label>
             <input type="text" name="full_name" required>
 

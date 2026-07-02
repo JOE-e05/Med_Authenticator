@@ -1,5 +1,6 @@
 <?php
 require_once "../config/admin_auth.php";
+require_once "../config/csrf.php";
 require_once "../classes/adminManager.php";
 
 $adminManager = new AdminManager();
@@ -9,13 +10,15 @@ $error = '';
 $statusFilter = trim($_GET['status_filter'] ?? '');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_manufacturer'])) {
+    csrf_require_valid_post();
+
     $profileId = (int) ($_POST['profile_id'] ?? 0);
     $newStatus = trim($_POST['approval_status'] ?? '');
     $reviewNotes = trim($_POST['review_notes'] ?? '');
     $adminId = (int) ($_SESSION['admin_id'] ?? 0);
 
     try {
-        $adminManager->updateManufacturerApproval($profileId, $newStatus, $reviewNotes, $adminId);
+        $adminManager->updateManufacturerApproval($profileId, $newStatus, $reviewNotes, $adminId, 'Admin');
         $message = 'Manufacturer approval status updated successfully.';
     } catch (Exception $e) {
         $error = $e->getMessage();
@@ -87,6 +90,7 @@ $queue = $adminManager->getManufacturerQueue($statusFilter);
                     </div>
 
                     <form method="POST" style="background:#f8f9fa; padding:14px; border-radius:6px;">
+                        <?php echo csrf_input_field(); ?>
                         <input type="hidden" name="profile_id" value="<?php echo (int) $item['profile_id']; ?>">
 
                         <label>Set Approval Status</label>

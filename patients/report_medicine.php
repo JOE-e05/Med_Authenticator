@@ -1,5 +1,6 @@
 <?php
 require_once "../config/patient_auth.php";
+require_once "../config/csrf.php";
 require_once "../config/database.php";
 
 $message = "";
@@ -8,6 +9,8 @@ $conn = $database->getConnection();
 $userId = $_SESSION['customerID'];
 
 if(isset($_POST['submit_report'])){
+    csrf_require_valid_post();
+
     $batchNumber = trim($_POST['batch_number']);
     $description = trim($_POST['description']);
     $defaultStatus = "Pending"; 
@@ -48,6 +51,7 @@ $reports = $reportsStmt->fetchAll(PDO::FETCH_ASSOC);
             <?php if(!empty($message)){ echo "<p style='color:green;'>" . htmlspecialchars($message) . "</p><br>"; } ?>
             
             <form method="POST">
+                <?php echo csrf_input_field(); ?>
                 <label>Batch or Pack Code</label>
                 <input type="text" name="batch_number" required>
                 <label>Description</label>

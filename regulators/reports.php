@@ -1,5 +1,6 @@
 <?php
 require_once "../config/regulator_auth.php";
+require_once "../config/csrf.php";
 require_once "../classes/regulatorManager.php";
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -10,13 +11,15 @@ $regulatorManager = new RegulatorManager();
 $successMessage = "";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_report'])) {
+    csrf_require_valid_post();
+
     $reportId = $_POST['reportID'];
     $status = $_POST['status'];
     $adminReview = trim($_POST['admin_review']);
     
     $regulatorId = isset($_SESSION['customerID']) ? $_SESSION['customerID'] : 3; 
     
-    if ($regulatorManager->updateReport($reportId, $status, $adminReview, $regulatorId)) {
+    if ($regulatorManager->updateReport($reportId, $status, $adminReview, $regulatorId, 'Regulator')) {
         $successMessage = "Report #$reportId successfully updated!";
     }
 }
@@ -65,6 +68,7 @@ $reports = $regulatorManager->getAllReports();
                     <hr style="border: 0; height: 1px; background: #eee; margin: 20px 0;">
 
                     <form method="POST" style="background-color: #f8f9fa; padding: 20px; border-radius: 5px;">
+                        <?php echo csrf_input_field(); ?>
                         <input type="hidden" name="reportID" value="<?php echo htmlspecialchars($report['reportID']); ?>">
                         
                         <label style="font-weight: bold; display: block; margin-bottom: 5px;">Investigation Status</label>

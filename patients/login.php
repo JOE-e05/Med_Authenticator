@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once "../config/csrf.php";
 require_once "../config/database.php";
 
 if (isset($_SESSION['patient_logged_in']) && $_SESSION['patient_logged_in'] === true) {
@@ -10,6 +11,8 @@ if (isset($_SESSION['patient_logged_in']) && $_SESSION['patient_logged_in'] === 
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_require_valid_post();
+
     $email = trim($_POST['email'] ?? '');
     $password = (string) ($_POST['password'] ?? '');
 
@@ -36,6 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if ($user && $passwordValid) {
+            session_regenerate_id(true);
             $_SESSION['patient_logged_in'] = true;
             $_SESSION['customerID'] = (int) $user['customerID'];
             $_SESSION['CustomerName'] = $user['CustomerName'];
@@ -71,6 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
 
         <form method="POST">
+            <?php echo csrf_input_field(); ?>
             <label>Email</label>
             <input type="email" name="email" required>
 

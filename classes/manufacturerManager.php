@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/authorization.php';
 
 class ManufacturerManager {
     private $pdo;
@@ -136,7 +137,9 @@ class ManufacturerManager {
         return $summary;
     }
 
-    public function createBatchWithPackCodes($userId, $medicineName, $manufactureDate, $expiryDate, $packCount) {
+    public function createBatchWithPackCodes($userId, $medicineName, $manufactureDate, $expiryDate, $packCount, $actorRole = 'Manufacturer') {
+        authz_require_role($actorRole);
+
         $packCount = (int) $packCount;
         if ($packCount < 1) {
             throw new RuntimeException('Pack quantity must be at least 1.');

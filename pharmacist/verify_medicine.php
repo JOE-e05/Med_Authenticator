@@ -1,9 +1,12 @@
 <?php
 require_once "../config/pharmacist_auth.php";
+require_once "../config/csrf.php";
 require_once "../classes/verifier.php"; 
 $result = null;
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['verification_code'])) {
+    csrf_require_valid_post();
+
     $verifier = new SystemVerifier();
     $verificationCode = trim($_POST['verification_code']);
     $verificationType = $_POST['verification_type'] ?? 'Batch';
@@ -38,6 +41,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['verification_code'])) 
 
         <div class="card" style="max-width: 600px; padding: 40px; text-align: center; border-top: 5px solid #004080;">
             <form method="POST">
+                <?php echo csrf_input_field(); ?>
                 <label style="display: block; text-align: left; font-weight: bold; margin-bottom: 10px; color: #333;">Verification Type</label>
                 <select name="verification_type" style="margin-bottom: 15px;">
                     <option value="Batch">Batch</option>

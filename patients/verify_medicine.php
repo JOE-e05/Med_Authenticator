@@ -1,11 +1,14 @@
 <?php
 require_once "../config/patient_auth.php";
+require_once "../config/csrf.php";
 require_once "../classes/verifier.php";
 
 $message = "";
 $medicineDetails = "";
 
 if(isset($_POST['verify'])){
+    csrf_require_valid_post();
+
     $packCode = trim($_POST['pack_code']);
     $userId = $_SESSION['customerID'];
 
@@ -50,6 +53,7 @@ if(isset($_POST['verify'])){
         <div class="card" style="max-width: 760px;">
             <h2>Verify Medicine Pack Code</h2><br>
             <form method="POST">
+                <?php echo csrf_input_field(); ?>
                 <label>Pack Code</label>
                 <input type="text" name="pack_code" placeholder="Enter Pack Code" required>
                 <button type="submit" name="verify">Verify</button>

@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once "../config/csrf.php";
 require_once "../config/database.php";
 
 if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true) {
@@ -10,6 +11,8 @@ if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true
 $error = "";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    csrf_require_valid_post();
+
     $email = trim($_POST['email'] ?? '');
     $password = (string) ($_POST['password'] ?? '');
 
@@ -30,6 +33,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
 
         if ($adminUser && $passwordValid) {
+            session_regenerate_id(true);
             $_SESSION['admin_logged_in'] = true;
             $_SESSION['admin_id'] = (int) ($adminUser['adminID'] ?? 0);
             $_SESSION['admin_email'] = $adminUser['email'];
@@ -64,6 +68,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <?php endif; ?>
 
         <form method="POST" style="text-align: left;">
+            <?php echo csrf_input_field(); ?>
             <label style="font-weight: bold; color: #333; font-size: 14px;">Email Address</label>
             <input type="email" name="email" placeholder="admin@med.com" required style="width: 100%; padding: 12px; margin-top: 5px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box;">
 

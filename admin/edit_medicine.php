@@ -1,5 +1,6 @@
 <?php
 require_once "../config/admin_auth.php";
+require_once "../config/csrf.php";
 require_once "../classes/adminManager.php";
 
 $adminManager = new AdminManager();
@@ -18,12 +19,14 @@ if (!$currentUser) {
 
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_user'])) {
+    csrf_require_valid_post();
+
     $name = $_POST['full_name'];
     $email = $_POST['email'];
     $role = $_POST['role']; 
 
     try {
-        if ($adminManager->updateUser($id, $name, $email, $role)) {
+        if ($adminManager->updateUser($id, $name, $email, $role, 'Admin')) {
             header("Location: users.php");
             exit();
         }
@@ -59,6 +62,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_user'])) {
             <?php echo $message; ?>
 
             <form method="POST">
+                <?php echo csrf_input_field(); ?>
                 <label>Full Name</label>
                 <input type="text" name="full_name" value="<?php echo htmlspecialchars($currentUser['CustomerName']); ?>" required>
                 

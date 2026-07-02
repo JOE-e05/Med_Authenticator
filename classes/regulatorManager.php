@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/authorization.php';
 
 class RegulatorManager {
     private $pdo;
@@ -28,7 +29,9 @@ class RegulatorManager {
         }
     }
 
-    public function updateReport($reportId, $status, $adminReview, $regulatorId) {
+    public function updateReport($reportId, $status, $adminReview, $regulatorId, $actorRole = 'Regulator') {
+        authz_require_role($actorRole);
+
         $sql = "UPDATE report 
                 SET status = :status, admin_review = :adminReview, reviewed_by = :regulatorId 
                 WHERE reportID = :id";

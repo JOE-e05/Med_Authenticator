@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/authorization.php';
 
 class AdminManager {
     private $pdo;
@@ -9,7 +10,9 @@ class AdminManager {
         $this->pdo = $database->getConnection();
     }
 
-    public function addGenuineMedicine($name, $manufacturer, $batch, $mfg, $exp) {
+    public function addGenuineMedicine($name, $manufacturer, $batch, $mfg, $exp, $actorRole = 'Admin') {
+        authz_require_role($actorRole);
+
         $sql = "INSERT INTO medicine (medName, manufacture, batchNumber, manufactureDate, expiryDate)
                 VALUES (:name, :manufacturer, :batch, :mfg, :exp)";
         $stmt = $this->pdo->prepare($sql);
@@ -33,7 +36,9 @@ class AdminManager {
         return $stmt->fetch();
     }
 
-    public function updateMedicine($medID, $name, $manufacturer, $batch, $mfg, $exp) {
+    public function updateMedicine($medID, $name, $manufacturer, $batch, $mfg, $exp, $actorRole = 'Admin') {
+        authz_require_role($actorRole);
+
         $sql = "UPDATE medicine
                 SET medName = :name, manufacture = :manufacturer, batchNumber = :batch,
                     manufactureDate = :mfg, expiryDate = :exp
@@ -49,7 +54,9 @@ class AdminManager {
         ]);
     }
 
-    public function deleteMedicine($medID) {
+    public function deleteMedicine($medID, $actorRole = 'Admin') {
+        authz_require_role($actorRole);
+
         $stmt = $this->pdo->prepare("DELETE FROM medicine WHERE medID = :id");
         return $stmt->execute([':id' => $medID]);
     }
@@ -103,7 +110,9 @@ class AdminManager {
         return $stmt->fetch();
     }
 
-    public function updateUser($customerId, $name, $email, $role) {
+    public function updateUser($customerId, $name, $email, $role, $actorRole = 'Admin') {
+        authz_require_role($actorRole);
+
         $sql = "UPDATE users
                 SET CustomerName = :name, email = :email, role = :role
                 WHERE customerID = :id";
@@ -116,7 +125,9 @@ class AdminManager {
         ]);
     }
 
-    public function updateUserStatus($customerId, $status) {
+    public function updateUserStatus($customerId, $status, $actorRole = 'Admin') {
+        authz_require_role($actorRole);
+
         $sql = "UPDATE users SET status = :status WHERE customerID = :id";
         $stmt = $this->pdo->prepare($sql);
         return $stmt->execute([
@@ -125,7 +136,9 @@ class AdminManager {
         ]);
     }
 
-    public function deleteUser($customerId) {
+    public function deleteUser($customerId, $actorRole = 'Admin') {
+        authz_require_role($actorRole);
+
         $stmt = $this->pdo->prepare("DELETE FROM users WHERE customerID = :id");
         return $stmt->execute([':id' => $customerId]);
     }
@@ -151,7 +164,9 @@ class AdminManager {
         }
     }
 
-    public function updateManufacturerApproval($profileId, $newStatus, $reviewNotes, $adminId) {
+    public function updateManufacturerApproval($profileId, $newStatus, $reviewNotes, $adminId, $actorRole = 'Admin') {
+        authz_require_role($actorRole);
+
         $allowed = ['Pending', 'Approved', 'Rejected', 'Suspended'];
         if (!in_array($newStatus, $allowed, true)) {
             throw new InvalidArgumentException('Invalid manufacturer status update.');
