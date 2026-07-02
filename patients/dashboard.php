@@ -23,7 +23,7 @@ $totalReports = $stmt2->fetch(PDO::FETCH_ASSOC)['total'];
 <html>
 <head>
     <title>Patient Dashboard</title>
-    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/style.css">
 </head>
 <body>
     <?php include("../includes/patient_sidebar.php"); ?>

@@ -1,7 +1,9 @@
 <?php
 session_start();
 
-$_SESSION['customerID'] = 1;
-$_SESSION['CustomerName'] = "Real Test Patient";
+if (!isset($_SESSION['patient_logged_in']) || $_SESSION['patient_logged_in'] !== true) {
+	header("Location: ../patients/login.php");
+	exit();
+}
 
 ?>

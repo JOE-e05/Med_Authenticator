@@ -1,12 +1,13 @@
 <?php
 require_once "../config/admin_auth.php"; 
-require_once "../classes/AdminManager.php"; 
+require_once "../classes/adminManager.php"; 
 
 $adminManager = new AdminManager();
 
 $totalMedicines = $adminManager->getMedicineCount();
 $totalUsers = $adminManager->getUserCount();
 $totalScans = $adminManager->getVerificationCount();
+$pendingManufacturers = $adminManager->getPendingManufacturerCount();
 ?>
 
 <!DOCTYPE html>
@@ -31,7 +32,7 @@ $totalScans = $adminManager->getVerificationCount();
         <div style="display: flex; gap: 20px; margin-bottom: 30px;">
             
             <div class="card" style="flex: 1; text-align: center; border-top: 5px solid #28a745;">
-                <h3 style="color: #666; margin-bottom: 10px;">Genuine Whitelist Batches</h3>
+                <h3 style="color: #666; margin-bottom: 10px;">Generated Batch Records</h3>
                 <h1 style="color: #003366; font-size: 40px; margin: 0;"><?php echo $totalMedicines; ?></h1>
             </div>
 
@@ -41,7 +42,12 @@ $totalScans = $adminManager->getVerificationCount();
             </div>
 
             <div class="card" style="flex: 1; text-align: center; border-top: 5px solid #17a2b8;">
-                <h3 style="color: #666; margin-bottom: 10px;">Total Patient Scans</h3>
+                <h3 style="color: #666; margin-bottom: 10px;">Pending Manufacturer Approvals</h3>
+                <h1 style="color: #003366; font-size: 40px; margin: 0;"><?php echo $pendingManufacturers; ?></h1>
+            </div>
+
+            <div class="card" style="flex: 1; text-align: center; border-top: 5px solid #6f42c1;">
+                <h3 style="color: #666; margin-bottom: 10px;">Total Verifications</h3>
                 <h1 style="color: #003366; font-size: 40px; margin: 0;"><?php echo $totalScans; ?></h1>
             </div>
 
@@ -49,13 +55,6 @@ $totalScans = $adminManager->getVerificationCount();
 
         <h2 style="color: #003366; margin-bottom: 15px;">Quick Actions</h2>
         <div style="display: flex; gap: 20px;">
-            
-            <a href="medicine.php" style="flex: 1; text-decoration: none;">
-                <div class="card" style="transition: 0.3s; cursor: pointer;" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='translateY(0)'">
-                    <h3 style="color: #003366;"> Manage records</h3>
-                    <p style="color: #666; margin-top: 10px;">Add, edit, or revoke genuine medication batches.</p>
-                </div>
-            </a>
 
             <a href="users.php" style="flex: 1; text-decoration: none;">
                 <div class="card" style="transition: 0.3s; cursor: pointer;" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='translateY(0)'">
@@ -64,10 +63,17 @@ $totalScans = $adminManager->getVerificationCount();
                 </div>
             </a>
 
+            <a href="manufacturers.php" style="flex: 1; text-decoration: none;">
+                <div class="card" style="transition: 0.3s; cursor: pointer;" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='translateY(0)'">
+                    <h3 style="color: #003366;">Review Manufacturers</h3>
+                    <p style="color: #666; margin-top: 10px;">Approve or reject pending manufacturer registration requests.</p>
+                </div>
+            </a>
+
             <a href="reports.php" style="flex: 1; text-decoration: none;">
                 <div class="card" style="transition: 0.3s; cursor: pointer;" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='translateY(0)'">
-                    <h3 style="color: #003366;">📊 View Scan Logs</h3>
-                    <p style="color: #666; margin-top: 10px;">Monitor live verification activity from the public portal.</p>
+                    <h3 style="color: #003366;">View Scan Logs</h3>
+                    <p style="color: #666; margin-top: 10px;">Monitor live verification activity and counterfeit alerts.</p>
                 </div>
             </a>
 

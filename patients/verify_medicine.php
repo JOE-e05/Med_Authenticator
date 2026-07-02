@@ -1,47 +1,38 @@
 <?php
 require_once "../config/patient_auth.php";
-require_once "../config/database.php";
 require_once "../classes/verifier.php";
 
 $message = "";
 $medicineDetails = "";
-$database = new Database();
-$conn = $database->getConnection();
 
 if(isset($_POST['verify'])){
-    $batchNumber = trim($_POST['batch_number']);
+    $packCode = trim($_POST['pack_code']);
     $userId = $_SESSION['customerID'];
 
     $verifier = new SystemVerifier();
-    $resultData = $verifier->checkBatchNumber($batchNumber);
+    $resultData = $verifier->verifyPackCode($packCode, $userId, 'Patient', true);
     $status = $resultData['status'];
 
     if($status === 'Genuine'){
-        $medicine = $resultData['details'];
+        $medicine = $resultData['details'] ?? [];
         $message = "Medicine Verified Successfully";
        
         $medicineDetails = "
-            <strong>Medicine Name:</strong> {$medicine['medName']}<br><br>
-            <strong>Manufacturer:</strong> {$medicine['manufacture']}<br><br>
-            <strong>Batch Number:</strong> {$medicine['batchNumber']}<br><br>
-            <strong>Expiry Date:</strong> {$medicine['expiryDate']}<br><br>
+            <strong>Medicine Name:</strong> " . htmlspecialchars($medicine['med_name'] ?? 'N/A') . "<br><br>
+            <strong>Manufacturer:</strong> " . htmlspecialchars($medicine['manufacturer_name'] ?? 'N/A') . "<br><br>
+            <strong>Batch Code:</strong> " . htmlspecialchars($medicine['batch_code'] ?? 'N/A') . "<br><br>
+            <strong>Pack Code:</strong> " . htmlspecialchars($medicine['pack_code'] ?? $packCode) . "<br><br>
+            <strong>Expiry Date:</strong> " . htmlspecialchars($medicine['expiry_date'] ?? 'N/A') . "<br><br>
             <strong>Status:</strong> <span style='color: green;'>Genuine</span>
         ";
     } else {
         $message = "Medicine Not Found. Suspected Counterfeit.";
         $medicineDetails = "
-            <strong>Entered Batch Number:</strong> " . htmlspecialchars($batchNumber) . "<br><br>
+            <strong>Entered Pack Code:</strong> " . htmlspecialchars($packCode) . "<br><br>
             <strong>Status:</strong> <span style='color: red;'>Suspected Counterfeit</span>
+            <br><br><strong>Action:</strong> An alert has been automatically sent to administrators and regulators.
         ";
     }
-
-
-    $logQuery = "INSERT INTO verification_log (userID, batchNumber, result) VALUES (:uid, :batch, :result)";
-    $logStmt = $conn->prepare($logQuery);
-    $logStmt->bindParam(':uid', $userId);
-    $logStmt->bindParam(':batch', $batchNumber);
-    $logStmt->bindParam(':result', $status);
-    $logStmt->execute();
 }
 ?>
 
@@ -52,22 +43,27 @@ if(isset($_POST['verify'])){
     <link rel="stylesheet" href="../assets/style.css">
 </head>
 <body>
-<div class="container">
-    <div class="card">
-        <h2>Verify Medicine</h2><br>
-        <form method="POST">
-            <label>Batch Number</label>
-            <input type="text" name="batch_number" placeholder="Enter Batch Number" required>
-            <button type="submit" name="verify">Verify</button>
-        </form>
-    </div>
-    <?php if(!empty($message)){ ?>
-        <div class="card">
-            <h3>Verification Result</h3><br>
-            <p><?php echo $message; ?></p><br>
-            <?php echo $medicineDetails; ?>
+<?php include("../includes/patient_sidebar.php"); ?>
+
+<div class="main-content">
+    <div class="container container-wide">
+        <div class="card" style="max-width: 760px;">
+            <h2>Verify Medicine Pack Code</h2><br>
+            <form method="POST">
+                <label>Pack Code</label>
+                <input type="text" name="pack_code" placeholder="Enter Pack Code" required>
+                <button type="submit" name="verify">Verify</button>
+            </form>
         </div>
-    <?php } ?>
+
+        <?php if(!empty($message)){ ?>
+            <div class="card" style="max-width: 760px; margin-top: 15px;">
+                <h3>Verification Result</h3><br>
+                <p><?php echo htmlspecialchars($message); ?></p><br>
+                <?php echo $medicineDetails; ?>
+            </div>
+        <?php } ?>
+    </div>
 </div>
 </body>
 </html>

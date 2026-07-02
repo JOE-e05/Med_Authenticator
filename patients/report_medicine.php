@@ -36,44 +36,46 @@ $reports = $reportsStmt->fetchAll(PDO::FETCH_ASSOC);
 <html>
 <head>
     <title>Report Medicine</title>
-    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/style.css">
 </head>
 <body>
-<div class="container">
-    <div class="card">
-        <h2>Report Suspicious Medicine</h2><br>
-        <?php if(!empty($message)){ echo "<p style='color:green;'>$message</p><br>"; } ?>
-        
-        <form method="POST">
-            <label>Batch Number</label>
-            <input type="text" name="batch_number" required>
-            <label>Description</label>
-            <textarea name="description" rows="5" style="width:100%;padding:10px;border:1px solid #ccc;border-radius:8px;" required></textarea>
-            <br><br>
-            <button type="submit" name="submit_report">Submit Report</button>
-        </form>
+<?php include("../includes/patient_sidebar.php"); ?>
 
-        <div class="card" style="margin-top: 20px;">
-            <h2>My Reports</h2>
-            <table border="1" width="100%" cellpadding="8">
-                <tr>
-                    <th>Report ID</th>
-                    <th>Batch Number</th>
-                    <th>Description</th>
-                    <th>Status</th>
-                </tr>
-                <?php foreach($reports as $report){ ?>
-                <tr>
-                    <td><?php echo htmlspecialchars($report['reportID']); ?></td>
-                    <td><?php echo htmlspecialchars($report['batchNumber']); ?></td>
-                    <td><?php echo htmlspecialchars($report['description']); ?></td>
-                    <td><?php echo htmlspecialchars($report['status'] ?? 'Pending'); ?></td>
-                </tr>
-                <?php } ?>
-            </table>
+<div class="main-content">
+    <div class="container container-wide">
+        <div class="card" style="max-width: 880px;">
+            <h2>Report Suspicious Medicine</h2><br>
+            <?php if(!empty($message)){ echo "<p style='color:green;'>" . htmlspecialchars($message) . "</p><br>"; } ?>
+            
+            <form method="POST">
+                <label>Batch or Pack Code</label>
+                <input type="text" name="batch_number" required>
+                <label>Description</label>
+                <textarea name="description" rows="5" style="width:100%;padding:10px;border:1px solid #ccc;border-radius:8px;" required></textarea>
+                <br><br>
+                <button type="submit" name="submit_report">Submit Report</button>
+            </form>
+
+            <div class="card" style="margin-top: 20px;">
+                <h2>My Reports</h2>
+                <table>
+                    <tr>
+                        <th>Report ID</th>
+                        <th>Batch/Pack Code</th>
+                        <th>Description</th>
+                        <th>Status</th>
+                    </tr>
+                    <?php foreach($reports as $report){ ?>
+                    <tr>
+                        <td><?php echo htmlspecialchars($report['reportID']); ?></td>
+                        <td><?php echo htmlspecialchars($report['batchNumber']); ?></td>
+                        <td><?php echo htmlspecialchars($report['description']); ?></td>
+                        <td><?php echo htmlspecialchars($report['status'] ?? 'Pending'); ?></td>
+                    </tr>
+                    <?php } ?>
+                </table>
+            </div>
         </div>
-        <br>
-        <a href="dashboard.php"><button>Back to Dashboard</button></a>
     </div>
 </div>
 </body>

@@ -1,6 +1,6 @@
 <?php
 require_once "../config/admin_auth.php";
-require_once "../classes/AdminManager.php";
+require_once "../classes/adminManager.php";
 
 $adminManager = new AdminManager();
 $message = "";
@@ -70,6 +70,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_user'])) {
                     <option value="Customer" <?php if($currentUser['role'] == 'Customer') echo 'selected'; ?>>Customer</option>
                     <option value="Pharmacist" <?php if($currentUser['role'] == 'Pharmacist') echo 'selected'; ?>>Pharmacist</option>
                     <option value="Regulator" <?php if($currentUser['role'] == 'Regulator') echo 'selected'; ?>>Regulator</option>
+                    <option value="Manufacturer" <?php if($currentUser['role'] == 'Manufacturer') echo 'selected'; ?>>Manufacturer</option>
                     <option value="Admin" <?php if($currentUser['role'] == 'Admin') echo 'selected'; ?>>Admin</option>
                 </select>
                 

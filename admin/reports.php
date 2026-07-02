@@ -1,6 +1,6 @@
 <?php
 require_once "../config/admin_auth.php";
-require_once "../classes/AdminManager.php";
+require_once "../classes/adminManager.php";
 
 $adminManager = new AdminManager();
 
@@ -23,15 +23,17 @@ $logs = $adminManager->getVerificationLogs();
         
         <div style="margin-bottom: 20px;">
             <h1 style="color: #003366; margin: 0; margin-bottom: 5px;">System Reports & Scan Logs</h1>
-            <p style="color: #666; font-size: 16px;">Live monitoring of all batch verifications performed on the system.</p>
+            <p style="color: #666; font-size: 16px;">Live monitoring of all verification activity across all actors.</p>
         </div>
 
         <div class="card">
             <table style="width: 100%; border-collapse: collapse; text-align: left;">
                 <tr style="border-bottom: 2px solid #003366;">
                     <th style="padding-bottom: 10px;">Scan ID</th>
-                    <th style="padding-bottom: 10px;">User (Patient)</th>
-                    <th style="padding-bottom: 10px;">Batch Scanned</th>
+                    <th style="padding-bottom: 10px;">User</th>
+                    <th style="padding-bottom: 10px;">Code</th>
+                    <th style="padding-bottom: 10px;">Type</th>
+                    <th style="padding-bottom: 10px;">Actor Role</th>
                     <th style="padding-bottom: 10px;">Date & Time</th>
                     <th style="padding-bottom: 10px;">Result</th>
                 </tr>
@@ -43,6 +45,10 @@ $logs = $adminManager->getVerificationLogs();
                     <td><strong><?php echo htmlspecialchars($log['CustomerName'] ?? 'Unknown User'); ?></strong></td>
                     
                     <td><strong style="color: #003366;"><?php echo htmlspecialchars($log['batchNumber']); ?></strong></td>
+
+                    <td><?php echo htmlspecialchars($log['verification_type'] ?? 'Batch'); ?></td>
+
+                    <td><?php echo htmlspecialchars($log['actor_role'] ?? 'Unknown'); ?></td>
                     
                     <td><?php echo htmlspecialchars($log['verified_at']); ?></td>
                     

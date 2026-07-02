@@ -1,0 +1,73 @@
+<?php
+require_once __DIR__ . '/../config/database.php';
+
+class RegulatorManager {
+    private $pdo;
+
+    public function __construct() {
+        $database = new Database();
+        $this->pdo = $database->getConnection();
+    }
+
+    public function getStatusCount($status) {
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM report WHERE status = :status");
+        $stmt->execute([':status' => $status]);
+        return (int) $stmt->fetchColumn();
+    }
+
+    public function getAllReports() {
+        try {
+            $sql = "SELECT r.*, u.CustomerName
+                    FROM report r
+                    LEFT JOIN users u ON r.userID = u.customerID
+                    ORDER BY r.reported_at DESC";
+            $stmt = $this->pdo->query($sql);
+            return $stmt->fetchAll();
+        } catch (PDOException $e) {
+            return [];
+        }
+    }
+
+    public function updateReport($reportId, $status, $adminReview, $regulatorId) {
+        $sql = "UPDATE report 
+                SET status = :status, admin_review = :adminReview, reviewed_by = :regulatorId 
+                WHERE reportID = :id";
+        $stmt = $this->pdo->prepare($sql);
+        return $stmt->execute([
+            ':status' => $status,
+            ':adminReview' => $adminReview,
+            ':regulatorId' => $regulatorId,
+            ':id' => $reportId
+        ]);
+    }
+
+    public function getVerificationSummary() {
+        $summary = [
+            'genuine' => 0,
+            'counterfeit' => 0,
+            'total' => 0
+        ];
+
+        try {
+            $stmt = $this->pdo->query("SELECT result, COUNT(*) AS total FROM verification_log GROUP BY result");
+            $rows = $stmt->fetchAll();
+
+            foreach ($rows as $row) {
+                $result = strtolower((string) $row['result']);
+                $count = (int) $row['total'];
+                if ($result === 'genuine' || $result === 'authentic') {
+                    $summary['genuine'] += $count;
+                } else {
+                    $summary['counterfeit'] += $count;
+                }
+            }
+
+            $summary['total'] = $summary['genuine'] + $summary['counterfeit'];
+        } catch (PDOException $e) {
+            // Keep zero values if table/columns are not ready.
+        }
+
+        return $summary;
+    }
+}
+?>

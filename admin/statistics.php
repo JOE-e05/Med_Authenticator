@@ -1,6 +1,6 @@
 <?php
 require_once "../config/admin_auth.php";
-require_once "../classes/AdminManager.php";
+require_once "../classes/adminManager.php";
 
 $adminManager = new AdminManager();
 

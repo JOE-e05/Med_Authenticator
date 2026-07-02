@@ -1,30 +1,16 @@
 <?php
+require_once __DIR__ . '/../config/database.php';
 
 class AdminManager {
     private $pdo;
 
     public function __construct() {
-        $host = 'localhost';
-        $db   = 'system database'; 
-        $user = 'root';
-        $pass = '';
-        $charset = 'utf8mb4';
-
-        $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
-        
-        try {
-            $this->pdo = new PDO($dsn, $user, $pass, [
-                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                PDO::ATTR_EMULATE_PREPARES   => false,
-            ]);
-        } catch (\PDOException $e) {
-            die("Database connection failed: " . $e->getMessage());
-        }
+        $database = new Database();
+        $this->pdo = $database->getConnection();
     }
 
     public function addGenuineMedicine($name, $manufacturer, $batch, $mfg, $exp) {
-        $sql = "INSERT INTO medicine (medName, manufacture, batchNumber, manufactureDate, expiryDate) 
+        $sql = "INSERT INTO medicine (medName, manufacture, batchNumber, manufactureDate, expiryDate)
                 VALUES (:name, :manufacturer, :batch, :mfg, :exp)";
         $stmt = $this->pdo->prepare($sql);
         return $stmt->execute([
@@ -48,8 +34,9 @@ class AdminManager {
     }
 
     public function updateMedicine($medID, $name, $manufacturer, $batch, $mfg, $exp) {
-        $sql = "UPDATE medicine 
-                SET medName = :name, manufacture = :manufacturer, batchNumber = :batch, manufactureDate = :mfg, expiryDate = :exp 
+        $sql = "UPDATE medicine
+                SET medName = :name, manufacture = :manufacturer, batchNumber = :batch,
+                    manufactureDate = :mfg, expiryDate = :exp
                 WHERE medID = :id";
         $stmt = $this->pdo->prepare($sql);
         return $stmt->execute([
@@ -66,25 +53,48 @@ class AdminManager {
         $stmt = $this->pdo->prepare("DELETE FROM medicine WHERE medID = :id");
         return $stmt->execute([':id' => $medID]);
     }
-    
+
     public function getMedicineCount() {
-        $stmt = $this->pdo->query("SELECT COUNT(*) FROM medicine");
-        return $stmt->fetchColumn();
+        try {
+            $stmt = $this->pdo->query("SELECT COUNT(*) FROM medicine_batches");
+            return (int) $stmt->fetchColumn();
+        } catch (PDOException $e) {
+            $stmt = $this->pdo->query("SELECT COUNT(*) FROM medicine");
+            return (int) $stmt->fetchColumn();
+        }
     }
 
     public function getUserCount() {
         $stmt = $this->pdo->query("SELECT COUNT(*) FROM users");
-        return $stmt->fetchColumn();
+        return (int) $stmt->fetchColumn();
     }
 
     public function getVerificationCount() {
         $stmt = $this->pdo->query("SELECT COUNT(*) FROM verification_log");
-        return $stmt->fetchColumn();
+        return (int) $stmt->fetchColumn();
+    }
+
+    public function getPendingManufacturerCount() {
+        try {
+            $stmt = $this->pdo->query("SELECT COUNT(*) FROM manufacturer_profiles WHERE approval_status = 'Pending'");
+            return (int) $stmt->fetchColumn();
+        } catch (PDOException $e) {
+            return 0;
+        }
     }
 
     public function getAllUsers() {
-        $stmt = $this->pdo->query("SELECT * FROM users ORDER BY role ASC, CustomerName ASC");
-        return $stmt->fetchAll();
+        try {
+            $sql = "SELECT u.*, mp.company_name, mp.license_number, mp.approval_status
+                    FROM users u
+                    LEFT JOIN manufacturer_profiles mp ON mp.user_id = u.customerID
+                    ORDER BY u.role ASC, u.CustomerName ASC";
+            $stmt = $this->pdo->query($sql);
+            return $stmt->fetchAll();
+        } catch (PDOException $e) {
+            $stmt = $this->pdo->query("SELECT * FROM users ORDER BY role ASC, CustomerName ASC");
+            return $stmt->fetchAll();
+        }
     }
 
     public function getUserById($customerId) {
@@ -94,8 +104,8 @@ class AdminManager {
     }
 
     public function updateUser($customerId, $name, $email, $role) {
-        $sql = "UPDATE users 
-                SET CustomerName = :name, email = :email, role = :role 
+        $sql = "UPDATE users
+                SET CustomerName = :name, email = :email, role = :role
                 WHERE customerID = :id";
         $stmt = $this->pdo->prepare($sql);
         return $stmt->execute([
@@ -107,7 +117,6 @@ class AdminManager {
     }
 
     public function updateUserStatus($customerId, $status) {
-
         $sql = "UPDATE users SET status = :status WHERE customerID = :id";
         $stmt = $this->pdo->prepare($sql);
         return $stmt->execute([
@@ -121,28 +130,128 @@ class AdminManager {
         return $stmt->execute([':id' => $customerId]);
     }
 
+    public function getManufacturerQueue($statusFilter = '') {
+        try {
+            $sql = "SELECT mp.*, u.CustomerName, u.email, u.status AS user_status
+                    FROM manufacturer_profiles mp
+                    INNER JOIN users u ON u.customerID = mp.user_id";
+
+            $params = [];
+            if ($statusFilter !== '') {
+                $sql .= " WHERE mp.approval_status = :status";
+                $params[':status'] = $statusFilter;
+            }
+
+            $sql .= " ORDER BY mp.submitted_at DESC";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll();
+        } catch (PDOException $e) {
+            return [];
+        }
+    }
+
+    public function updateManufacturerApproval($profileId, $newStatus, $reviewNotes, $adminId) {
+        $allowed = ['Pending', 'Approved', 'Rejected', 'Suspended'];
+        if (!in_array($newStatus, $allowed, true)) {
+            throw new InvalidArgumentException('Invalid manufacturer status update.');
+        }
+
+        $this->pdo->beginTransaction();
+        try {
+            $currentStmt = $this->pdo->prepare("SELECT user_id, approval_status FROM manufacturer_profiles WHERE profile_id = :id");
+            $currentStmt->execute([':id' => $profileId]);
+            $current = $currentStmt->fetch();
+
+            if (!$current) {
+                throw new RuntimeException('Manufacturer profile not found.');
+            }
+
+            $updateStmt = $this->pdo->prepare(
+                "UPDATE manufacturer_profiles
+                 SET approval_status = :status,
+                     reviewed_at = NOW(),
+                     reviewed_by = :reviewedBy,
+                     review_notes = :notes
+                 WHERE profile_id = :id"
+            );
+            $updateStmt->execute([
+                ':status' => $newStatus,
+                ':reviewedBy' => $adminId,
+                ':notes' => $reviewNotes,
+                ':id' => $profileId
+            ]);
+
+            $newUserStatus = ($newStatus === 'Approved') ? 1 : 0;
+            $userStmt = $this->pdo->prepare("UPDATE users SET status = :status WHERE customerID = :id");
+            $userStmt->execute([
+                ':status' => $newUserStatus,
+                ':id' => $current['user_id']
+            ]);
+
+            $logStmt = $this->pdo->prepare(
+                "INSERT INTO manufacturer_approval_log
+                    (profile_id, old_status, new_status, action_notes, acted_by, acted_at)
+                 VALUES
+                    (:profileId, :oldStatus, :newStatus, :notes, :actedBy, NOW())"
+            );
+            $logStmt->execute([
+                ':profileId' => $profileId,
+                ':oldStatus' => $current['approval_status'],
+                ':newStatus' => $newStatus,
+                ':notes' => $reviewNotes,
+                ':actedBy' => $adminId
+            ]);
+
+            $this->pdo->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->pdo->rollBack();
+            throw $e;
+        }
+    }
+
     public function getVerificationLogs() {
-        $sql = "SELECT v.loginID, v.userID, v.batchNumber, v.verified_at, v.result, u.CustomerName 
-                FROM verification_log v 
-                LEFT JOIN users u ON v.userID = u.customerID 
-                ORDER BY v.verified_at DESC";
-        
-        $stmt = $this->pdo->query($sql);
-        return $stmt->fetchAll();
+        try {
+            $sql = "SELECT v.loginID, v.userID, v.batchNumber, v.verification_type, v.actor_role,
+                           v.verified_at, v.result, u.CustomerName
+                    FROM verification_log v
+                    LEFT JOIN users u ON v.userID = u.customerID
+                    ORDER BY v.verified_at DESC";
+            $stmt = $this->pdo->query($sql);
+            return $stmt->fetchAll();
+        } catch (PDOException $e) {
+            $sql = "SELECT v.loginID, v.userID, v.batchNumber, v.verified_at, v.result, u.CustomerName
+                    FROM verification_log v
+                    LEFT JOIN users u ON v.userID = u.customerID
+                    ORDER BY v.verified_at DESC";
+            $stmt = $this->pdo->query($sql);
+            return $stmt->fetchAll();
+        }
     }
 
     public function getScanResultStats() {
-        $stmt = $this->pdo->query("SELECT result, COUNT(*) as total FROM verification_log GROUP BY result");
-        return $stmt->fetchAll();
+        try {
+            $stmt = $this->pdo->query("SELECT result, COUNT(*) AS total FROM verification_log GROUP BY result");
+            return $stmt->fetchAll();
+        } catch (PDOException $e) {
+            return [];
+        }
     }
 
     public function getTopScannedBatches() {
-        $stmt = $this->pdo->query
-        ("SELECT batchNumber, COUNT(*) as scan_count 
-                                   FROM verification_log 
-                                   GROUP BY batchNumber 
-                                   ORDER BY scan_count DESC LIMIT 5");
-        return $stmt->fetchAll();
+        try {
+            $stmt = $this->pdo->query(
+                "SELECT batchNumber, COUNT(*) AS scan_count
+                 FROM verification_log
+                 GROUP BY batchNumber
+                 ORDER BY scan_count DESC
+                 LIMIT 5"
+            );
+            return $stmt->fetchAll();
+        } catch (PDOException $e) {
+            return [];
+        }
     }
 }
 ?>

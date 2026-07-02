@@ -1,6 +1,6 @@
 <?php
 require_once "../config/admin_auth.php";
-require_once "../classes/AdminManager.php";
+require_once "../classes/adminManager.php";
 
 $adminManager = new AdminManager();
 $message = "";
@@ -76,7 +76,7 @@ $users = $adminManager->getAllUsers();
                         <?php endif; ?>
                     </td>
                     <td>
-                        <a href="edit_user.php?id=<?php echo $user['customerID']; ?>" style="color: #0056b3; font-weight: bold; text-decoration: none; margin-right: 10px;">Edit</a>
+                        <a href="edit_medicine.php?id=<?php echo $user['customerID']; ?>" style="color: #0056b3; font-weight: bold; text-decoration: none; margin-right: 10px;">Edit</a>
                         
                         <?php if($user['status'] == 1): ?>
                             <a href="users.php?status=0&id=<?php echo $user['customerID']; ?>" style="color: #fd7e14; text-decoration: none; margin-right: 10px;">Deactivate</a>

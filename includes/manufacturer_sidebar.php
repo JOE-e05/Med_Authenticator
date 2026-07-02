@@ -1,0 +1,8 @@
+<div class="sidebar">
+    <h2 style="text-align: center; color: white; margin-bottom: 30px; font-size: 22px; border-bottom: 1px solid #004080; padding-bottom: 20px;">Manufacturer Portal</h2>
+    <ul style="list-style-type: none; padding: 0;">
+        <li><a href="dashboard.php" style="color: white; text-decoration: none; display: block; padding: 12px 15px; margin-bottom: 5px; border-radius: 5px; transition: 0.3s;">Dashboard</a></li>
+        <li><a href="pending.php" style="color: white; text-decoration: none; display: block; padding: 12px 15px; margin-bottom: 25px; border-radius: 5px; transition: 0.3s;">Approval Status</a></li>
+        <li><a href="logout.php" style="color: #ff6b6b; font-weight: bold; text-decoration: none; display: block; padding: 12px 15px; border-radius: 5px; transition: 0.3s;">Logout</a></li>
+    </ul>
+</div>
