@@ -82,7 +82,7 @@ $users = $adminManager->getAllUsers();
                         <?php endif; ?>
                     </td>
                     <td>
-                        <a href="edit_medicine.php?id=<?php echo $user['customerID']; ?>" style="color: #0056b3; font-weight: bold; text-decoration: none; margin-right: 10px;">Edit</a>
+                        <a href="edit_user.php?id=<?php echo $user['customerID']; ?>" style="color: #0056b3; font-weight: bold; text-decoration: none; margin-right: 10px;">Edit</a>
 
                         <?php if($user['status'] == 1): ?>
                             <form method="POST" style="display:inline-block; margin-right: 10px;">

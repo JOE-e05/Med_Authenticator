@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/input_validation.php';
 
 class SystemVerifier {
     private $pdo;
@@ -14,11 +15,12 @@ class SystemVerifier {
     }
 
     public function verifyBatchCode($batchCode, $userId, $actorRole = 'Unknown') {
-        $batchCode = $this->sanitizeCode($batchCode);
-        if ($batchCode === '') {
+        try {
+            $batchCode = InputValidator::validateVerificationCode($batchCode, 'Batch code');
+        } catch (RuntimeException $e) {
             return [
                 'status' => 'Error',
-                'message' => 'Batch code cannot be empty.'
+                'message' => $e->getMessage()
             ];
         }
 
@@ -50,11 +52,12 @@ class SystemVerifier {
     }
 
     public function verifyPackCode($packCode, $userId, $actorRole = 'Unknown', $autoAlert = false) {
-        $packCode = $this->sanitizeCode($packCode);
-        if ($packCode === '') {
+        try {
+            $packCode = InputValidator::validateVerificationCode($packCode, 'Pack code');
+        } catch (RuntimeException $e) {
             return [
                 'status' => 'Error',
-                'message' => 'Pack code cannot be empty.'
+                'message' => $e->getMessage()
             ];
         }
 
@@ -87,10 +90,6 @@ class SystemVerifier {
                 'message' => 'Verification engine error: ' . $e->getMessage()
             ];
         }
-    }
-
-    private function sanitizeCode($rawCode) {
-        return htmlspecialchars(strip_tags(trim((string) $rawCode)));
     }
 
     private function findBatch($batchCode) {
@@ -168,6 +167,25 @@ class SystemVerifier {
 
     private function createAutoCounterfeitAlert($userId, $packCode, $verificationLogId) {
         try {
+                        // Avoid flooding duplicate auto-alerts for repeated scans of the same code in a short window.
+                        $dupCheck = $this->pdo->prepare(
+                                "SELECT reportID
+                                 FROM report
+                                 WHERE userID = :userId
+                                     AND batchNumber = :batchNumber
+                                     AND source_type = 'AutoAlert'
+                                     AND reported_at >= (NOW() - INTERVAL 10 MINUTE)
+                                 LIMIT 1"
+                        );
+                        $dupCheck->execute([
+                                ':userId' => $userId,
+                                ':batchNumber' => $packCode
+                        ]);
+
+                        if ($dupCheck->fetch()) {
+                                return;
+                        }
+
             $query = "INSERT INTO report
                         (userID, verification_log_id, batchNumber, description, source_type, status, reported_at)
                       VALUES
@@ -183,6 +201,7 @@ class SystemVerifier {
                 ':description' => $description
             ]);
         } catch (PDOException $e) {
+            // Legacy fallback without source_type/verification_log_id columns.
             $query = "INSERT INTO report (userID, batchNumber, description, status)
                       VALUES (:userId, :batchNumber, :description, 'Pending')";
             $description = 'Counterfeit verification detected. Please investigate.';

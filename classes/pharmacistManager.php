@@ -107,5 +107,51 @@ class PharmacistManager {
             return $stmt->fetchAll();
         }
     }
+
+    public function getPharmacistVerificationLogs($pharmacistId, $search = '') {
+        $pharmacistId = (int) $pharmacistId;
+        if ($pharmacistId < 1) {
+            return [];
+        }
+
+        try {
+            $sql = "SELECT v.loginID, v.userID, v.batchNumber, v.verification_type, v.verified_at,
+                           v.result, u.CustomerName
+                    FROM verification_log v
+                    LEFT JOIN users u ON v.userID = u.customerID
+                    WHERE v.userID = :userId
+                      AND (v.actor_role = 'Pharmacist' OR v.actor_role IS NULL)";
+
+            $params = [':userId' => $pharmacistId];
+
+            if ($search !== '') {
+                $sql .= " AND (v.batchNumber LIKE :search OR v.result LIKE :search OR v.verification_type LIKE :search)";
+                $params[':search'] = "%$search%";
+            }
+
+            $sql .= " ORDER BY v.verified_at DESC";
+
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll();
+        } catch (PDOException $e) {
+            $sql = "SELECT v.loginID, v.userID, v.batchNumber, 'Batch' AS verification_type,
+                           v.verified_at, v.result, u.CustomerName
+                    FROM verification_log v
+                    LEFT JOIN users u ON v.userID = u.customerID
+                    WHERE v.userID = :userId";
+
+            $params = [':userId' => $pharmacistId];
+            if ($search !== '') {
+                $sql .= " AND (v.batchNumber LIKE :search OR v.result LIKE :search)";
+                $params[':search'] = "%$search%";
+            }
+
+            $sql .= " ORDER BY v.verified_at DESC";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll();
+        }
+    }
 }
 ?>

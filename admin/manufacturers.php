@@ -76,6 +76,20 @@ $queue = $adminManager->getManufacturerQueue($statusFilter);
             <div class="card"><p style="color:#666;">No manufacturer records found for the selected filter.</p></div>
         <?php else: ?>
             <?php foreach ($queue as $item): ?>
+                <?php
+                    $riskLevel = $item['duplicate_risk_level'] ?? 'None';
+                    $riskScore = (int) ($item['duplicate_risk_score'] ?? 0);
+                    $riskSignals = $item['duplicate_signals'] ?? [];
+
+                    $riskColor = '#28a745';
+                    if ($riskLevel === 'High') {
+                        $riskColor = '#dc3545';
+                    } elseif ($riskLevel === 'Medium') {
+                        $riskColor = '#fd7e14';
+                    } elseif ($riskLevel === 'Low') {
+                        $riskColor = '#17a2b8';
+                    }
+                ?>
                 <div class="card" style="margin-bottom:16px; border-left:4px solid #003366;">
                     <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:10px;">
                         <div>
@@ -87,6 +101,23 @@ $queue = $adminManager->getManufacturerQueue($statusFilter);
                             <div><strong>Status:</strong> <?php echo htmlspecialchars($item['approval_status']); ?></div>
                             <div><strong>Submitted:</strong> <?php echo htmlspecialchars($item['submitted_at']); ?></div>
                         </div>
+                    </div>
+
+                    <div style="margin: 8px 0 14px; padding: 10px 12px; border-radius: 6px; background: #f8f9fa; border-left: 4px solid <?php echo $riskColor; ?>;">
+                        <p style="margin: 0 0 6px; color: #333;">
+                            <strong>Duplicate Risk:</strong>
+                            <span style="color: <?php echo $riskColor; ?>; font-weight: bold;">
+                                <?php echo htmlspecialchars($riskLevel); ?> (Score: <?php echo $riskScore; ?>)
+                            </span>
+                        </p>
+
+                        <?php if (!empty($riskSignals)): ?>
+                            <?php foreach ($riskSignals as $signal): ?>
+                                <p style="margin: 4px 0; color: #555;">- <?php echo htmlspecialchars($signal); ?></p>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <p style="margin: 0; color: #555;">No duplicate indicators detected for this request.</p>
+                        <?php endif; ?>
                     </div>
 
                     <form method="POST" style="background:#f8f9fa; padding:14px; border-radius:6px;">

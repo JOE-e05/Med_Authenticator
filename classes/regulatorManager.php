@@ -29,6 +29,70 @@ class RegulatorManager {
         }
     }
 
+    public function getInvestigationFeed($search = '', $sourceFilter = '', $statusFilter = '') {
+        try {
+            $sql = "SELECT r.*, u.CustomerName,
+                           v.verification_type, v.result AS verification_result,
+                           v.actor_role, v.verified_at AS verification_time
+                    FROM report r
+                    LEFT JOIN users u ON r.userID = u.customerID
+                    LEFT JOIN verification_log v ON r.verification_log_id = v.loginID
+                    WHERE 1=1";
+
+            $params = [];
+
+            if ($sourceFilter !== '') {
+                $sql .= " AND r.source_type = :sourceFilter";
+                $params[':sourceFilter'] = $sourceFilter;
+            }
+
+            if ($statusFilter !== '') {
+                $sql .= " AND r.status = :statusFilter";
+                $params[':statusFilter'] = $statusFilter;
+            }
+
+            if ($search !== '') {
+                $sql .= " AND (
+                            r.batchNumber LIKE :search
+                            OR r.description LIKE :search
+                            OR u.CustomerName LIKE :search
+                            OR COALESCE(v.result, '') LIKE :search
+                            OR COALESCE(v.verification_type, '') LIKE :search
+                          )";
+                $params[':search'] = "%$search%";
+            }
+
+            $sql .= " ORDER BY r.reported_at DESC";
+
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll();
+        } catch (PDOException $e) {
+            $sql = "SELECT r.*, u.CustomerName
+                    FROM report r
+                    LEFT JOIN users u ON r.userID = u.customerID
+                    WHERE 1=1";
+
+            $params = [];
+
+            if ($statusFilter !== '') {
+                $sql .= " AND r.status = :statusFilter";
+                $params[':statusFilter'] = $statusFilter;
+            }
+
+            if ($search !== '') {
+                $sql .= " AND (r.batchNumber LIKE :search OR r.description LIKE :search OR u.CustomerName LIKE :search)";
+                $params[':search'] = "%$search%";
+            }
+
+            $sql .= " ORDER BY r.reported_at DESC";
+
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll();
+        }
+    }
+
     public function updateReport($reportId, $status, $adminReview, $regulatorId, $actorRole = 'Regulator') {
         authz_require_role($actorRole);
 

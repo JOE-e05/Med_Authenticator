@@ -2,6 +2,7 @@
 session_start();
 require_once "../config/csrf.php";
 require_once "../classes/manufacturerManager.php";
+require_once "../config/input_validation.php";
 
 $manager = new ManufacturerManager();
 $message = '';
@@ -10,22 +11,25 @@ $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_require_valid_post();
 
-    $fullName = trim($_POST['full_name'] ?? '');
-    $email = trim($_POST['email'] ?? '');
-    $password = (string) ($_POST['password'] ?? '');
-    $companyName = trim($_POST['company_name'] ?? '');
-    $licenseNumber = strtoupper(trim($_POST['license_number'] ?? ''));
-    $country = trim($_POST['country'] ?? '');
-    $phone = trim($_POST['phone'] ?? '');
-    $address = trim($_POST['address'] ?? '');
+    $fullName = $_POST['full_name'] ?? '';
+    $email = $_POST['email'] ?? '';
+    $password = $_POST['password'] ?? '';
+    $companyName = $_POST['company_name'] ?? '';
+    $licenseNumber = $_POST['license_number'] ?? '';
+    $country = $_POST['country'] ?? '';
+    $phone = $_POST['phone'] ?? '';
+    $address = $_POST['address'] ?? '';
 
-    if ($fullName === '' || $email === '' || $password === '' || $companyName === '' || $licenseNumber === '') {
-        $error = 'All required fields must be completed.';
-    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $error = 'Please provide a valid email address.';
-    } elseif (strlen($password) < 8) {
-        $error = 'Password must be at least 8 characters.';
-    } else {
+    try {
+        InputValidator::validatePersonName($fullName, 'Contact person name');
+        InputValidator::validateEmail($email);
+        InputValidator::validatePassword($password);
+        InputValidator::validateCompanyName($companyName);
+        InputValidator::validateLicenseNumber($licenseNumber);
+        InputValidator::validateCountry($country);
+        InputValidator::validatePhone($phone);
+        InputValidator::validateAddress($address);
+
         try {
             $manager->registerManufacturer($fullName, $email, $password, $companyName, $licenseNumber, $country, $phone, $address);
             $message = 'Registration submitted successfully. Your account is pending admin approval.';
@@ -34,6 +38,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch (Exception $e) {
             $error = 'Unable to complete registration: ' . $e->getMessage();
         }
+    } catch (RuntimeException $e) {
+        $error = $e->getMessage();
     }
 }
 ?>
@@ -65,28 +71,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <form method="POST">
             <?php echo csrf_input_field(); ?>
             <label>Contact Person Name</label>
-            <input type="text" name="full_name" required>
+            <input type="text" name="full_name" required value="<?php echo htmlspecialchars((string) ($fullName ?? '')); ?>">
 
             <label>Email Address</label>
-            <input type="email" name="email" required>
+            <input type="email" name="email" required value="<?php echo htmlspecialchars((string) ($email ?? '')); ?>">
 
             <label>Password (min 8 characters)</label>
             <input type="password" name="password" required minlength="8">
 
             <label>Company Name</label>
-            <input type="text" name="company_name" required>
+            <input type="text" name="company_name" required value="<?php echo htmlspecialchars((string) ($companyName ?? '')); ?>">
 
             <label>License Number</label>
-            <input type="text" name="license_number" required>
+            <input type="text" name="license_number" required value="<?php echo htmlspecialchars((string) ($licenseNumber ?? '')); ?>">
 
             <label>Country</label>
-            <input type="text" name="country">
+            <input type="text" name="country" value="<?php echo htmlspecialchars((string) ($country ?? '')); ?>">
 
             <label>Contact Phone</label>
-            <input type="text" name="phone">
+            <input type="text" name="phone" value="<?php echo htmlspecialchars((string) ($phone ?? '')); ?>">
 
             <label>Company Address</label>
-            <textarea name="address" rows="4" style="width:100%; padding:12px; border:1px solid #d1d5db; border-radius:6px;"></textarea>
+            <textarea name="address" rows="4" style="width:100%; padding:12px; border:1px solid #d1d5db; border-radius:6px;"><?php echo htmlspecialchars((string) ($address ?? '')); ?></textarea>
 
             <button type="submit">Submit Registration</button>
         </form>

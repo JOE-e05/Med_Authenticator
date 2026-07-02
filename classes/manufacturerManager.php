@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../config/authorization.php';
+require_once __DIR__ . '/../config/input_validation.php';
 
 class ManufacturerManager {
     private $pdo;
@@ -11,6 +12,15 @@ class ManufacturerManager {
     }
 
     public function registerManufacturer($fullName, $email, $password, $companyName, $licenseNumber, $country, $phone, $address) {
+        $fullName = InputValidator::validatePersonName($fullName, 'Contact person name');
+        $email = InputValidator::validateEmail($email);
+        $password = InputValidator::validatePassword($password);
+        $companyName = InputValidator::validateCompanyName($companyName);
+        $licenseNumber = InputValidator::validateLicenseNumber($licenseNumber);
+        $country = InputValidator::validateCountry($country);
+        $phone = InputValidator::validatePhone($phone);
+        $address = InputValidator::validateAddress($address);
+
         $this->pdo->beginTransaction();
 
         try {
@@ -111,6 +121,24 @@ class ManufacturerManager {
         return $stmt->fetch();
     }
 
+    public function getApprovalHistoryByUserId($userId) {
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT l.old_status, l.new_status, l.action_notes, l.acted_at,
+                        reviewer.CustomerName AS reviewer_name
+                 FROM manufacturer_approval_log l
+                 INNER JOIN manufacturer_profiles mp ON mp.profile_id = l.profile_id
+                 LEFT JOIN users reviewer ON reviewer.customerID = l.acted_by
+                 WHERE mp.user_id = :userId
+                 ORDER BY l.acted_at DESC"
+            );
+            $stmt->execute([':userId' => $userId]);
+            return $stmt->fetchAll();
+        } catch (PDOException $e) {
+            return [];
+        }
+    }
+
     public function getManufacturerSummary($userId) {
         $summary = [
             'total_batches' => 0,
@@ -140,13 +168,11 @@ class ManufacturerManager {
     public function createBatchWithPackCodes($userId, $medicineName, $manufactureDate, $expiryDate, $packCount, $actorRole = 'Manufacturer') {
         authz_require_role($actorRole);
 
-        $packCount = (int) $packCount;
-        if ($packCount < 1) {
-            throw new RuntimeException('Pack quantity must be at least 1.');
-        }
-        if ($packCount > 5000) {
-            throw new RuntimeException('Pack quantity is too large for one request.');
-        }
+        $medicineName = InputValidator::validateMedicineName($medicineName);
+        $manufactureDate = InputValidator::validateDate($manufactureDate, 'Manufacture date');
+        $expiryDate = InputValidator::validateDate($expiryDate, 'Expiry date');
+        InputValidator::validateDateOrder($manufactureDate, $expiryDate);
+        $packCount = InputValidator::validatePackCount($packCount);
 
         $profile = $this->getProfileByUserId($userId);
         if (!$profile || $profile['approval_status'] !== 'Approved') {

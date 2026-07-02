@@ -5,7 +5,7 @@ require_once "../classes/pharmacistManager.php";
 $pharmacistManager = new PharmacistManager();
 $search = trim($_GET['search'] ?? '');
 $pharmacistId = isset($_SESSION['customerID']) ? (int) $_SESSION['customerID'] : null;
-$logs = $pharmacistManager->getVerificationLogs(null, $search);
+$logs = $pharmacistManager->getPharmacistVerificationLogs($pharmacistId, $search);
 ?>
 
 <!DOCTYPE html>
@@ -25,7 +25,7 @@ $logs = $pharmacistManager->getVerificationLogs(null, $search);
         <div style="margin-bottom: 20px; display:flex; justify-content:space-between; align-items:center; gap:10px;">
             <div>
             <h1 style="color: #003366; margin: 0; margin-bottom: 5px;">Verification Logs</h1>
-            <p style="color: #666; font-size: 16px;">Monitor all medication scans happening across the system.</p>
+            <p style="color: #666; font-size: 16px;">Search through your pharmacy verification history.</p>
             </div>
 
             <form method="GET" style="display:flex; gap:10px; align-items:center;">
@@ -40,7 +40,7 @@ $logs = $pharmacistManager->getVerificationLogs(null, $search);
         <div class="card">
             <table style="width: 100%; border-collapse: collapse; text-align: left;">
                 <tr style="border-bottom: 2px solid #003366;">
-                    <th style="padding-bottom: 10px;">Patient Name</th>
+                    <th style="padding-bottom: 10px;">Verified By</th>
                     <th style="padding-bottom: 10px;">Code Scanned</th>
                     <th style="padding-bottom: 10px;">Type</th>
                     <th style="padding-bottom: 10px;">Date & Time</th>

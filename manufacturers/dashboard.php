@@ -1,6 +1,7 @@
 <?php
 require_once "../config/manufacturer_auth.php";
 require_once "../config/csrf.php";
+require_once "../config/input_validation.php";
 require_once "../classes/manufacturerManager.php";
 
 $manager = new ManufacturerManager();
@@ -14,22 +15,26 @@ $search = trim($_GET['search'] ?? '');
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate_codes'])) {
     csrf_require_valid_post();
 
-    $medicineName = trim($_POST['medicine_name'] ?? '');
-    $manufactureDate = trim($_POST['manufacture_date'] ?? '');
-    $expiryDate = trim($_POST['expiry_date'] ?? '');
-    $packCount = (int) ($_POST['pack_count'] ?? 0);
+    $medicineName = $_POST['medicine_name'] ?? '';
+    $manufactureDate = $_POST['manufacture_date'] ?? '';
+    $expiryDate = $_POST['expiry_date'] ?? '';
+    $packCount = $_POST['pack_count'] ?? 0;
 
-    if ($medicineName === '' || $manufactureDate === '' || $expiryDate === '' || $packCount < 1) {
-        $error = 'All generation fields are required.';
-    } elseif ($expiryDate <= $manufactureDate) {
-        $error = 'Expiry date must be after manufacture date.';
-    } else {
+    try {
+        InputValidator::validateMedicineName($medicineName);
+        $manufactureDate = InputValidator::validateDate($manufactureDate, 'Manufacture date');
+        $expiryDate = InputValidator::validateDate($expiryDate, 'Expiry date');
+        InputValidator::validateDateOrder($manufactureDate, $expiryDate);
+        $packCount = InputValidator::validatePackCount($packCount);
+
         try {
             $generatedBatch = $manager->createBatchWithPackCodes($userId, $medicineName, $manufactureDate, $expiryDate, $packCount, 'Manufacturer');
             $message = 'Batch and pack codes generated successfully.';
         } catch (Exception $e) {
             $error = $e->getMessage();
         }
+    } catch (RuntimeException $e) {
+        $error = $e->getMessage();
     }
 }
 
@@ -83,16 +88,16 @@ $history = $manager->getBatchHistory($userId, $search);
             <form method="POST" style="margin-top: 15px;">
                 <?php echo csrf_input_field(); ?>
                 <label>Medicine Name</label>
-                <input type="text" name="medicine_name" required>
+                <input type="text" name="medicine_name" required value="<?php echo htmlspecialchars((string) ($medicineName ?? '')); ?>">
 
                 <label>Manufacture Date</label>
-                <input type="date" name="manufacture_date" required>
+                <input type="date" name="manufacture_date" required value="<?php echo htmlspecialchars((string) ($manufactureDate ?? '')); ?>">
 
                 <label>Expiry Date</label>
-                <input type="date" name="expiry_date" required>
+                <input type="date" name="expiry_date" required value="<?php echo htmlspecialchars((string) ($expiryDate ?? '')); ?>">
 
                 <label>Number of Unique Pack Codes</label>
-                <input type="number" min="1" max="5000" name="pack_count" required>
+                <input type="number" min="1" max="5000" name="pack_count" required value="<?php echo htmlspecialchars((string) ($packCount ?? '')); ?>">
 
                 <button type="submit" name="generate_codes">Generate Codes</button>
             </form>

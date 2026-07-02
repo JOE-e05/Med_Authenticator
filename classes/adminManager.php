@@ -158,10 +158,137 @@ class AdminManager {
             $sql .= " ORDER BY mp.submitted_at DESC";
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute($params);
-            return $stmt->fetchAll();
+            $rows = $stmt->fetchAll();
+            $this->attachDuplicateRiskSignals($rows);
+            return $rows;
         } catch (PDOException $e) {
             return [];
         }
+    }
+
+    private function attachDuplicateRiskSignals(&$queue) {
+        if (empty($queue) || !is_array($queue)) {
+            return;
+        }
+
+        foreach ($queue as &$item) {
+            $item['duplicate_risk_score'] = 0;
+            $item['duplicate_risk_level'] = 'None';
+            $item['duplicate_signals'] = [];
+        }
+        unset($item);
+
+        try {
+            $userRows = $this->pdo->query("SELECT customerID, email, phoneNumber FROM users")->fetchAll();
+            $profileRows = $this->pdo->query("SELECT profile_id, company_name, license_number, contact_phone FROM manufacturer_profiles")->fetchAll();
+        } catch (PDOException $e) {
+            return;
+        }
+
+        $emailCounts = [];
+        $phoneCounts = [];
+        $licenseCounts = [];
+        $companyCounts = [];
+
+        foreach ($userRows as $user) {
+            $emailKey = $this->normalizeTextKey($user['email'] ?? '');
+            if ($emailKey !== '') {
+                $emailCounts[$emailKey] = ($emailCounts[$emailKey] ?? 0) + 1;
+            }
+
+            $phoneKey = $this->normalizePhoneKey($user['phoneNumber'] ?? '');
+            if ($phoneKey !== '') {
+                $phoneCounts[$phoneKey] = ($phoneCounts[$phoneKey] ?? 0) + 1;
+            }
+        }
+
+        foreach ($profileRows as $profile) {
+            $licenseKey = $this->normalizeTextKey($profile['license_number'] ?? '');
+            if ($licenseKey !== '') {
+                $licenseCounts[$licenseKey] = ($licenseCounts[$licenseKey] ?? 0) + 1;
+            }
+
+            $companyKey = $this->normalizeTextKey($profile['company_name'] ?? '');
+            if ($companyKey !== '') {
+                $companyCounts[$companyKey] = ($companyCounts[$companyKey] ?? 0) + 1;
+            }
+
+            $contactPhoneKey = $this->normalizePhoneKey($profile['contact_phone'] ?? '');
+            if ($contactPhoneKey !== '') {
+                $phoneCounts[$contactPhoneKey] = ($phoneCounts[$contactPhoneKey] ?? 0) + 1;
+            }
+        }
+
+        foreach ($queue as &$item) {
+            $riskScore = 0;
+            $signals = [];
+
+            $licenseKey = $this->normalizeTextKey($item['license_number'] ?? '');
+            if ($licenseKey !== '' && ($licenseCounts[$licenseKey] ?? 0) > 1) {
+                $extra = ((int) $licenseCounts[$licenseKey]) - 1;
+                $signals[] = 'License number matches ' . $extra . ' other manufacturer profile(s).';
+                $riskScore += 4;
+            }
+
+            $companyKey = $this->normalizeTextKey($item['company_name'] ?? '');
+            if ($companyKey !== '' && ($companyCounts[$companyKey] ?? 0) > 1) {
+                $extra = ((int) $companyCounts[$companyKey]) - 1;
+                $signals[] = 'Company name matches ' . $extra . ' other manufacturer profile(s).';
+                $riskScore += 2;
+            }
+
+            $emailKey = $this->normalizeTextKey($item['email'] ?? '');
+            if ($emailKey !== '' && ($emailCounts[$emailKey] ?? 0) > 1) {
+                $extra = ((int) $emailCounts[$emailKey]) - 1;
+                $signals[] = 'Email matches ' . $extra . ' other user account(s).';
+                $riskScore += 2;
+            }
+
+            $phoneKey = $this->normalizePhoneKey($item['contact_phone'] ?? '');
+            if ($phoneKey !== '' && ($phoneCounts[$phoneKey] ?? 0) > 1) {
+                $extra = ((int) $phoneCounts[$phoneKey]) - 1;
+                $signals[] = 'Contact phone matches ' . $extra . ' other account/profile record(s).';
+                $riskScore += 1;
+            }
+
+            $item['duplicate_risk_score'] = $riskScore;
+            $item['duplicate_risk_level'] = $this->mapDuplicateRiskLevel($riskScore);
+            $item['duplicate_signals'] = $signals;
+        }
+        unset($item);
+    }
+
+    private function normalizeTextKey($value) {
+        $value = strtolower(trim((string) $value));
+        if ($value === '') {
+            return '';
+        }
+
+        return preg_replace('/\s+/', ' ', $value);
+    }
+
+    private function normalizePhoneKey($phone) {
+        $digits = preg_replace('/\D+/', '', (string) $phone);
+        if ($digits === null || strlen($digits) < 7) {
+            return '';
+        }
+
+        return $digits;
+    }
+
+    private function mapDuplicateRiskLevel($score) {
+        $score = (int) $score;
+        if ($score >= 5) {
+            return 'High';
+        }
+        if ($score >= 3) {
+            return 'Medium';
+        }
+        if ($score >= 1) {
+            return 'Low';
+        }
+
+        return 'None';
     }
 
     public function updateManufacturerApproval($profileId, $newStatus, $reviewNotes, $adminId, $actorRole = 'Admin') {

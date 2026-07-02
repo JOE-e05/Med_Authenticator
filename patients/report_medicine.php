@@ -2,6 +2,7 @@
 require_once "../config/patient_auth.php";
 require_once "../config/csrf.php";
 require_once "../config/database.php";
+require_once "../config/input_validation.php";
 
 $message = "";
 $database = new Database();
@@ -11,21 +12,29 @@ $userId = $_SESSION['customerID'];
 if(isset($_POST['submit_report'])){
     csrf_require_valid_post();
 
-    $batchNumber = trim($_POST['batch_number']);
-    $description = trim($_POST['description']);
-    $defaultStatus = "Pending"; 
+    try {
+        $batchNumber = InputValidator::validateVerificationCode($_POST['batch_number'] ?? '', 'Batch or pack code');
+        $description = InputValidator::validateReportDescription($_POST['description'] ?? '');
+    } catch (RuntimeException $e) {
+        $message = $e->getMessage();
+        $batchNumber = '';
+        $description = '';
+    }
 
-    
-    $insertStmt = $conn->prepare("INSERT INTO report (userID, batchNumber, description, status) VALUES (:uid, :batch, :desc, :status)");
-    $insertStmt->bindParam(':uid', $userId);
-    $insertStmt->bindParam(':batch', $batchNumber);
-    $insertStmt->bindParam(':desc', $description);
-    $insertStmt->bindParam(':status', $defaultStatus);
-    
-    if($insertStmt->execute()){
-        $message = "Report submitted successfully to the PPB.";
-    } else {
-        $message = "Failed to submit report.";
+    $defaultStatus = "Pending";
+
+    if ($batchNumber !== '' && $description !== '') {
+        $insertStmt = $conn->prepare("INSERT INTO report (userID, batchNumber, description, status) VALUES (:uid, :batch, :desc, :status)");
+        $insertStmt->bindParam(':uid', $userId);
+        $insertStmt->bindParam(':batch', $batchNumber);
+        $insertStmt->bindParam(':desc', $description);
+        $insertStmt->bindParam(':status', $defaultStatus);
+
+        if($insertStmt->execute()){
+            $message = "Report submitted successfully to the PPB.";
+        } else {
+            $message = "Failed to submit report.";
+        }
     }
 }
 
